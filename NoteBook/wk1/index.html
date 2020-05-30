@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<style>
+		*{
+			margin: 0;
+			padding: 0;
+		}
+		body{
+			position: relative;
+			width: 100%;
+			height: 100vh;
+			overflow: hidden;
+			display: flex;
+			justify-content: center;
+			align-items: center;
+			background: #000;
+			color: #fff;
+			font-family: consolas;
+		}
+	</style>
+	<title>Tensorflow Basic</title>
+</head>
+<body>
+	<h1>Tensorflow.js</h1>
+	<script src="./tensorflow.js"></script>
+	<script>
+		async function training(model){
+			const history = await model.fit(xs,ys,{
+				epochs : 500,
+				callbacks : {
+					onEpochEnd : async (epoch,logs)=>{
+						console.log("Epoch ",+epoch+" loss : "+logs.loss);
+					}
+				}
+			})
+		}
+
+
+		let xs = tf.tensor2d([-1.0,-0.0,1.0,2.0,3.0,4.0,5.0,6.0,7.0,8.0,9.0,10.0],[12,1]);
+		let ys = tf.tensor2d([-3.0, -1.0, 1.0, 3.0, 5.0, 7.0, 9.0, 11.0, 13.0, 15.0, 17.0, 19.0],[12,1]);
+		let predict = null;
+		const model = tf.sequential();
+		model.add(tf.layers.dense({ units: 1, inputShape: [1]}));
+		model.compile({ loss: "meanSquaredError", optimizer: 'sgd' });
+		model.summary();
+		training(model).then(()=>{
+			//alert(model.predict(tf.tensor2d([15.0,100.0],[2,1])));
+			console.log("Prediction for 15.0 & 100.0  : ");
+			predict = (model.predict(tf.tensor2d([15.0, 100.0], [2, 1])));
+			predict.print();
+		})
+	</script>
+</body>
+</html>

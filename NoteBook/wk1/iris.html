@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IRIS DataSet</title>
+</head>
+<body>
+    <h1>Iris Data</h1>
+    <script src="./tensorflow.js"></script>
+    <script>
+        async function run(){
+            const csvUrl = "iris.csv";
+            const trainingData = tf.data.csv(csvUrl,{
+                columnConfigs :{
+                    variety :{
+                        isLabel : true
+                    }
+                }
+            })
+
+            const numberofFeatures = (await trainingData.columnNames()).length - 1;
+            const numOfSamples = 150;
+
+            const convertedData = trainingData.map(({xs,ys})=>{
+                const labels = [
+                    ys.variety == "Setosa" ? 1 : 0,
+                    ys.variety == "Versicolor" ? 1 : 0,
+                    ys.variety == "Virginica" ? 1 : 0,
+                ]
+                return{xs:Object.values(xs),ys:Object.values(labels)};
+            }).batch(10);
+
+
+            const model = tf.sequential();
+            model.add(tf.layers.dense({inputShape:[numberofFeatures],activation:"sigmoid",units:5}));
+            model.add(tf.layers.dense({activation: "softmax", units: 3 }));
+            model.compile({
+                loss : "categoricalCrossentropy",
+                optimizer:tf.train.adam(0.06)
+            })
+            model.summary();
+
+            await model.fitDataset(
+                convertedData,
+                {
+                    epochs : 100,
+                    callbacks : {
+                        onEpochEnd : async (epoch,logs)=>{
+                            console.log("Epoch ", +epoch + " loss : " + logs.loss);
+                        }
+                    }
+                }
+            )
+
+            const testVal = tf.tensor2d([4.4,2.9,1.4,0.2],[1,4]);
+            const prediction = model.predictClass(testVal);
+            console.log(prediction.print());
+        }
+        run();
+    </script>
+</body>
+</html>

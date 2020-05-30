@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Iris Practice</title>
+</head>
+<body>
+    <h1>Iris Practice</h1>
+    <script src="./tensorflow.js"></script>
+    <script>
+        async function model(){
+            let csvUrl = "./iris.csv";
+            let traindata = tf.data.csv(csvUrl,{
+                columnConfigs : {
+                    variety : {
+                        isLabel :true
+                    }
+                }
+            })
+            let numOfFeature = (await traindata.columnNames()).length - 1;
+            console.log("Total no of Features : ",numOfFeature)
+
+            let data = traindata.map(({ xs, ys }) => {
+                console.log("Hi");
+                const labels = [
+                    ys.variety == "Setosa" ? 1 : 0,
+                    ys.variety == "Versicolor" ? 1 : 0,
+                    ys.variety == "Virginica" ? 1 : 0,
+                ]
+                return { xs: Object.values(xs), ys: Object.values(labels) };
+            }).batch(10);
+            
+            const model = tf.sequential();
+            model.add(tf.layers.dense({units:5,inputShape:[numOfFeature],activation:'sigmoid'}));
+            model.add(tf.layers.dense({ units: 3,activation: 'softmax' }));
+            model.compile({
+                loss: "categoricalCrossentropy",
+                optimizer: tf.train.adam(0.06)
+            })
+            model.summary();
+            console.log(data);
+            await model.fitDataset(data,{
+                epochs : 5,
+                callbacks : {
+                    onEpochEnd : async (epoch,logs)=>{
+                        console.log("Epoch ",epoch," loss : ",logs.loss);
+                    }
+                }
+            }).then(()=>{
+                const testVal = tf.tensor2d([4.4, 2.9, 1.4, 0.2], [1, 4]);
+                const prediction = model.predict(testVal);
+                console.log(prediction.print());
+            })
+        }
+        model();
+    </script>
+</body>
+</html>
